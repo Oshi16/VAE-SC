@@ -1,3 +1,4 @@
+import os
 from tensorflow.keras.datasets import mnist
 from train import train_vae
 from plotting import plot_metrics, plot_loss
@@ -20,6 +21,10 @@ training_details = {'rayleigh': {}, 'rician': {}, 'nakagami': {}}
 
 for channel_type in ['rayleigh', 'rician', 'nakagami']:
     for latent_dim in latent_dims:
+        checkpoint_dir = f'./VAE_checkpoints/{channel_type}_latent{latent_dim}/'
+        if not os.path.exists(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+        
         training_details[channel_type][latent_dim] = [train_vae(channel_type, latent_dim, snr_db, x_train, x_test, epochs, batch_size, K, m) for snr_db in snr_range]
 
 plot_metrics('PSNR', training_details, snr_range)
