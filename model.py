@@ -48,9 +48,33 @@ class VAE(tf.keras.Model):
         z = sampling([z_mean, z_log_var])
 
         # Channel effects to be added here as needed
+        reconstructed_rayleigh = self.decoder(rayleigh_fading_channel(z, self.snr_db))
+        reconstructed_rician = self.decoder(rician_fading_channel(z, self.snr_db, self.K))
+        reconstructed_nakagami = self.decoder(nakagami_fading_channel(z, self.snr_db, self.m))
 
-        reconstructed = self.decoder(z)
+        # Calculate losses
+        reconstruction_loss_rayleigh = tf.reduce_mean(
+            tf.reduce_sum(
+                tf.keras.losses.binary_crossentropy(inputs, reconstructed_rayleigh), axis=(1, 2)
+            )
+        )
+        reconstruction_loss_rician = tf.reduce_mean(
+            tf.reduce_sum(
+                tf.keras.losses.binary_crossentropy(inputs, reconstructed_rician), axis=(1, 2)
+            )
+        )
+        reconstruction_loss_nakagami = tf.reduce_mean(
+            tf.reduce_sum(
+                tf.keras.losses.binary_crossentropy(inputs, reconstructed_nakagami), axis=(1, 2)
+            )
+        )
 
-        # VAE loss calculations to be added here
+        # KL divergence loss
+        kl_loss = -0.5 * tf.reduce_sum(1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var), axis=-1)
 
-        return reconstructed
+        # Total loss
+        total_loss = reconstruction_loss_rayleigh + reconstruction_loss_rician + reconstruction_loss_nakagami + kl_loss
+
+        self.add_loss(total_loss)
+
+        return reconstructed_rayleigh, reconstructed_rician, reconstructed_nakagami
