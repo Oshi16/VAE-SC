@@ -1,9 +1,8 @@
+import os
 import tensorflow as tf
 from model import VAE, build_encoder, build_decoder
 from channels import rayleigh_fading_channel, rician_fading_channel, nakagami_fading_channel
 from metrics import MetricsCallback
-import numpy as np
-import os
 
 def train_vae(channel_type, latent_dim, snr_db, x_train, x_test, epochs, batch_size, K, m):
     encoder = build_encoder(latent_dim)
@@ -19,7 +18,11 @@ def train_vae(channel_type, latent_dim, snr_db, x_train, x_test, epochs, batch_s
         raise ValueError("Invalid channel type specified")
 
     vae.compile(optimizer='adam')
-
+    
+    checkpoint_dir = './VAE_checkpoints/'
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+        
     latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir)
     initial_epoch = 0
     if latest_checkpoint:
