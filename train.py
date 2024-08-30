@@ -3,6 +3,7 @@ from model import VAE, build_encoder, build_decoder
 from channels import rayleigh_fading_channel, rician_fading_channel, nakagami_fading_channel
 from metrics import MetricsCallback
 import numpy as np
+import os
 
 def train_vae(channel_type, latent_dim, snr_db, x_train, x_test, epochs, batch_size, K, m):
     encoder = build_encoder(latent_dim)
@@ -18,6 +19,12 @@ def train_vae(channel_type, latent_dim, snr_db, x_train, x_test, epochs, batch_s
         raise ValueError("Invalid channel type specified")
 
     vae.compile(optimizer='adam')
+
+    latest_checkpoint = tf.train.latest_checkpoint(checkpoint_dir)
+    initial_epoch = 0
+    if latest_checkpoint:
+        vae.load_weights(latest_checkpoint)
+        initial_epoch = int(latest_checkpoint.split('_')[-1].split('.')[0])  # Extract epoch number
 
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         filepath='./VAE_checkpoints/vae_{epoch:02d}.weights.h5',
